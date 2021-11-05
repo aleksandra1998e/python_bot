@@ -48,18 +48,14 @@ def text_hi(update, context):
 def help_fun(update, context):
     pass
 
-
 def lowprice(update, context):
     pass
-
 
 def hightprice(update, context):
     pass
 
-
 def bestdeal(update, context):
     pass
-
 
 def history(update, context):
     pass

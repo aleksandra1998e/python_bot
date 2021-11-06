@@ -1,104 +1,171 @@
-import logging
-from telegram import InlineKeyboardButton, Bot, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery
-from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, CallbackQueryHandler,  ConversationHandler,  CallbackContext
+import telebot
+from telebot import types
 import os
 from dotenv import load_dotenv
+import logging
+import datetime
 
-LOWPRICE, HIGHTPRICE, BESTDEAL, HISTORY = range(4)
-keyboard_static = [[KeyboardButton("/help")],
-                   [KeyboardButton("/lowprice")],
-                   [KeyboardButton("/hightprice")],
-                   [KeyboardButton("/bestdeal")],
-                   [KeyboardButton("/history")]]
-
-keyboard_first = [[InlineKeyboardButton("Самые дешевые отели", callback_data='LOWPRICE')],
-                  [InlineKeyboardButton("Самые дорогие отели", callback_data='HIGHTPRICE')],
-                  [InlineKeyboardButton("Отели близко к центру", callback_data='BESTDEAL')],
-                  [InlineKeyboardButton("История запросов", callback_data='HISTORY')]]
-
-keyboard_count = [[InlineKeyboardButton("5", callback_data=5),
-                  InlineKeyboardButton("10", callback_data=10)],
-                  [InlineKeyboardButton("15", callback_data=15),
-                  InlineKeyboardButton("20", callback_data=20)]]
-
-
-def start(update, _):
-    update.message.reply_text('Привет', reply_markup=ReplyKeyboardMarkup(keyboard_static))
-    reply_markup = InlineKeyboardMarkup(keyboard_first, one_time_keyboard=True)
-    update.message.reply_text('Что будем смотреть?', reply_markup=reply_markup)
-
-
-def hello_world(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Привет")
-    reply_markup = InlineKeyboardMarkup(keyboard_first)
-    update.message.reply_text('Что будем смотреть?', reply_markup=reply_markup)
-
-
-def text_hi(update, context):
-    if update.message.text == 'Привет':
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text='И тебе привет')
-        reply_markup = InlineKeyboardMarkup(keyboard_first)
-        update.message.reply_text('Что будем смотреть?', reply_markup=reply_markup)
-    else:
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text='Извини, я тебя не понимаю...\nНапиши лучше Привет')
-
-
-def help_fun(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text='Что я умею:\nПоказать отели с самой низкой ценой (команда /lowprice)\n'
-                                  'Показать отели с самой высокой ценой (команда /highprice)\n'
-                                  'Показать отели в указанном ценовом диапазоне рядом с центром (команда /bestdeal)\n'
-                                  'Показать историю запросов (команда /history)\n\n'
-                                  'Также ты можешь воспользоваться кнопками на клавиатуре в любое удобное время.'
-                             )
-    reply_markup = InlineKeyboardMarkup(keyboard_first)
-    update.message.reply_text('Что будем смотреть?', reply_markup=reply_markup)
-
-def lowprice(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text='Тут будет функция поиска дешевых отелей')
-
-def hightprice(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text='Тут будет функция поиска дорогих отелей')
-
-def bestdeal(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text='Тут будет функция поиска отелей близко к центру')
-
-def history(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text='Тут будет функция вывода истории запросов')
-
-
+logger = telebot.logger
+telebot.logger.setLevel(logging.DEBUG)
 load_dotenv()
 TOKEN = os.environ.get('TOKEN')
-bot = Bot(token=TOKEN)
-updater = Updater(token=TOKEN, use_context=True)
-dispatcher = updater.dispatcher
+bot = telebot.TeleBot(TOKEN)
+user_dict = {}
+search_data = []
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-logger = logging.getLogger(__name__)
+start_keyboard = types.ReplyKeyboardMarkup(row_width=1)
+btn1, btn2, btn3, btn4, btn5 = types.KeyboardButton('/lowprice'), types.KeyboardButton('/highprice'),\
+                                types.KeyboardButton('/bestdeal'), types.KeyboardButton('/history'), \
+                                types.KeyboardButton('/help')
+start_keyboard.add(btn1, btn2, btn3, btn4, btn5)
+
+func_keyboard = types.InlineKeyboardMarkup(row_width=1)
+btn1, btn2, btn3, btn4 = types.InlineKeyboardButton("Самые дешевые", callback_data='lowprice'), \
+                               types.InlineKeyboardButton("Самые дорогие", callback_data='highprice'),\
+                               types.InlineKeyboardButton("Близко к центру", callback_data='bestdeal'), \
+                               types.InlineKeyboardButton("История запросов", callback_data='history')
+func_keyboard.add(btn1, btn2, btn3, btn4)
+
+yes_no_keyboard = types.InlineKeyboardMarkup(row_width=1)
+btn1, btn2 = types.InlineKeyboardButton("Да", callback_data='yes'),\
+             types.InlineKeyboardButton("Нет", callback_data='no')
+yes_no_keyboard.add(btn1, btn2)
 
 
-dispatcher.add_handler(CallbackQueryHandler(lowprice, pattern='LOWPRICE'))
-dispatcher.add_handler(CallbackQueryHandler(hightprice, pattern='HIGHTPRICE'))
-dispatcher.add_handler(CallbackQueryHandler(bestdeal, pattern='BESTDEAL'))
-dispatcher.add_handler(CallbackQueryHandler(history, pattern='HISTORY'))
-dispatcher.add_handler(CommandHandler('start', start))
-dispatcher.add_handler(CommandHandler('hello_world', hello_world))
-dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), text_hi))
-dispatcher.add_handler(CommandHandler('help', help_fun))
-dispatcher.add_handler(CommandHandler('lowprice', lowprice))
-dispatcher.add_handler(CommandHandler('hightprice', hightprice))
-dispatcher.add_handler(CommandHandler('bestdeal', bestdeal))
-dispatcher.add_handler(CommandHandler('history', history))
+@bot.message_handler(regexp='Привет')
+@bot.message_handler(commands=['start', 'hello_world'])
+def start_message(message):
+    """Функция отвечающая на команды старт и привет мир
+    И слово привет."""
+    bot.send_message(message.chat.id, 'Привет!', reply_markup=start_keyboard)
+    bot.send_message(message.chat.id, 'Ну что, начнем', reply_markup=func_keyboard)
+    try:
+        chat_id = message.chat.id
+        if chat_id not in user_dict.keys():
+            user_dict[chat_id] = list()
+        print(user_dict)
+    except Exception:
+        bot.reply_to(message, 'Произошла ошибка...')
+
+
+@bot.message_handler(commands=['help'])
+def helper(message):
+    """Функция отвечающая на команду помощь."""
+    bot.send_message(
+        message.chat.id, 'Что я умею:\n'
+                         'Показать отели с самой низкой ценой (команда /lowprice)\n'
+                         'Показать отели с самой высокой ценой (команда /highprice)\n'
+                         'Показать отели в указанном ценовом диапазоне рядом с центром (команда /bestdeal)\n'
+                         'Показать историю запросов (команда /history)\n\n'
+                         'Также ты можешь воспользоваться кнопками на клавиатуре в любое удобное время.')
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'lowprice')
+@bot.message_handler(commands=['lowprice'])
+def lowprice_seacher(message):
+    """Функция поиска самых дешевых отелей."""
+    msg = bot.send_message(
+        message.chat.id, 'В каком городе будем искать?')  #'CallbackQuery' object has no attribute 'chat_id'
+    search_data.clear()                                   # Если вызывать через инлайн кнопки
+    search_data.append('lowprice')
+    user_dict[message.chat.id].append("Функция поиска самых дешевых отелей.")
+    user_dict[message.chat.id].append(str(datetime.datetime.now()))
+    bot.register_next_step_handler(msg, city)
+
+
+def city(message):
+    """Функция добавляет в список критериев поиска
+    город."""
+    search_data.append(message.text.lower())
+    msg = bot.send_message(
+        message.chat.id, 'Сколько отелей показать?\n  (не более 15 штук)')
+    bot.register_next_step_handler(msg, hotels_count)
+
+
+def hotels_count(message):
+    """Функция добавляет в список критериев поиска
+    количество отелей."""
+    if not message.text.isdigit():
+        msg = bot.send_message(message.chat_id,
+                               'Количество должно быть числом, введите ещё раз.')
+        bot.register_next_step_handler(msg, hotels_count)
+    elif int(message.text) > 15:
+        msg = bot.send_message(message.chat_id,
+                               'Количество не более 15 штук, введите ещё раз.')
+        bot.register_next_step_handler(msg, hotels_count)
+    search_data.append(int(message.text))
+    bot.send_message(
+        message.chat.id, 'Желаете добавить фотографии отелей?', reply_markup=yes_no_keyboard)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'yes')
+def count_photo(message):
+    """Функция спрашивает количество фото."""
+    msg = bot.send_message(message.chat_id,                 #'CallbackQuery' object has no attribute 'chat_id'
+                           'Введите количество фотографий.' #ТА ЖЕ ПРОБЛЕМА КАК НА 68. Инлайн кнопки
+                           '      (максимум 5)')
+    bot.register_next_step_handler(msg, send_photo)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'no')
+def count_photo(message):
+    """Функция передает в качестве количества
+    фотографии 0."""
+    search_data.append(0)
+    msg = bot.send_message(message.chat_id,
+                           'Начинаю поиск.')
+    bot.register_next_step_handler(msg, search_any)
+
+
+def send_photo(message):
+    """Функция добавляет в список критериев поиска
+        количество фото."""
+    if not message.text.isdigit():
+        msg = bot.send_message(message.chat_id,
+                               'Количество должно быть числом, введите ещё раз.')
+        bot.register_next_step_handler(msg, send_photo)
+    elif int(message.text) > 5:
+        msg = bot.send_message(message.chat_id,
+                               'Количество не более 5 штук, введите ещё раз.')
+        bot.register_next_step_handler(msg, send_photo)
+    search_data.append(int(message.text))
+    msg = bot.send_message(message.chat_id,
+                           'Начинаю поиск.')
+    bot.register_next_step_handler(msg, search_any)
+
+
+def search_any():
+    """В зависимости от первого аргумента в search_data
+    буду вызывать тот или иной поиск"""
+    pass
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'highprice')
+@bot.message_handler(commands=['highprice'])
+def helper(message):
+    """Функция поиска самых дорогих отелей."""
+    bot.send_message(
+        message.chat.id, 'Функция поиска самых дорогих отелей')
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'bestdeal')
+@bot.message_handler(commands=['bestdeal'])
+def helper(message):
+    """Функция поиска отелей в заданном
+     ценовом диапазоне рядом с центром."""
+    bot.send_message(
+        message.chat.id, 'Функция поиска отелей в заданном '
+                         'ценовом диапазоне рядом с центром.')
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'history')
+@bot.message_handler(commands=['history'])
+def helper(message):
+    """Вывод истории поиска."""
+    bot.send_message(
+        message.chat.id, 'Вывод истории поиска')
 
 
 if __name__ == '__main__':
-    updater.start_polling()
+    bot.infinity_polling()
 

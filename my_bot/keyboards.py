@@ -1,6 +1,6 @@
 from telebot import types
 
-yes_no_keyboard = types.InlineKeyboardMarkup(row_width=1)
+yes_no_keyboard = types.InlineKeyboardMarkup(row_width=1, )
 btn1, btn2 = types.InlineKeyboardButton("Да", callback_data='yes'),\
              types.InlineKeyboardButton("Нет", callback_data='no')
 yes_no_keyboard.add(btn1, btn2)
@@ -17,3 +17,9 @@ btn1, btn2, btn3, btn4 = types.InlineKeyboardButton("Самые дешевые",
                                types.InlineKeyboardButton("Близко к центру", callback_data='bestdeal'), \
                                types.InlineKeyboardButton("История запросов", callback_data='history')
 func_keyboard.add(btn1, btn2, btn3, btn4)
+
+currency_keyboard = types.InlineKeyboardMarkup(row_width=1)
+btn1, btn2, btn3 = types.InlineKeyboardButton("Рубль", callback_data='currency RUB'), \
+                        types.InlineKeyboardButton("Доллар", callback_data='currency USD'),\
+                        types.InlineKeyboardButton("Евро", callback_data='currency EUR')
+currency_keyboard.add(btn1, btn2, btn3)

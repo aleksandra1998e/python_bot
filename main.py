@@ -2,6 +2,7 @@ from my_bot.my_class import User, MyTranslationCalendar
 from my_bot.keyboards import yes_no_keyboard, start_keyboard, func_keyboard, currency_keyboard
 from my_bot.check import check_city
 from my_bot.price_sorter import price_sorter
+from my_bot.bestdeal import besdeal_req
 
 import re
 import telebot
@@ -10,6 +11,7 @@ import os
 from dotenv import load_dotenv
 import logging
 import datetime
+from datetime import timedelta
 #import sqlite3
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(asctime)s: %(name)s - %(levelname)s - %(message)s')
@@ -32,8 +34,8 @@ def start_message(message):
     И слово привет."""
     try:
         user = User.get_user(message.from_user.id)
-        bot.send_message(message.chat.id, 'Привет!', reply_markup=start_keyboard)
-        bot.send_message(message.chat.id, 'Ну что, начнем', reply_markup=func_keyboard)
+        bot.send_message(user.id, 'Привет!', reply_markup=start_keyboard)
+        bot.send_message(user.id, 'Ну что, начнем', reply_markup=func_keyboard)
     except Exception as e:
         print(f"bot happened: {e}")
         bot.send_message(message.chat.id, 'Произошла ошибка...')
@@ -179,7 +181,7 @@ def city(message):
     try:
         user = User.get_user(message.from_user.id)
         if not check_city(message.text.lower(), bot, message.chat.id):
-            msg = bot.send_message(message.chat.id,
+            msg = bot.send_message(user.id,
                                    'Не могу понять, что это за город. Попробуйте ввести еще раз.')
             bot.register_next_step_handler(msg, city)
             return
@@ -215,7 +217,14 @@ def currency_choice(call):
         user.search_data[-1]['currency'] = currency[1]
         bot.edit_message_text(f'Выбрана валюта {currency[1]}',
                               call.message.chat.id, call.message.message_id)
-        hotels_count(call.message)
+
+        if not user.search_data[-1]['function'] == 'bestdeal':
+            hotels_count(call.message)
+        else:
+            msg = bot.send_message(
+                call.message.chat.id,
+                'Введите желаемую стоимость за сутки.\n(минимум и максимум через пробел)')
+            bot.register_next_step_handler(msg, price_range)
     except Exception as e:
         print(f"bot happened in def currency_choice: {e}")
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
@@ -226,15 +235,10 @@ def hotels_count(message):
         """Функция спрашивает количество отелей или
         ценовой диапазон поиска в зависимости от запроса."""
         user = User.get_user(message.chat.id)
-        if not user.search_data[-1]['function'] == 'bestdeal':
-            msg = bot.send_message(
-                message.chat.id, 'Сколько отелей показать?\n   (не более 10 штук)')
-            bot.register_next_step_handler(msg, photo)
-        else:
-            msg = bot.send_message(
-                message.chat.id,
-                'Введите желаемую стоимость за сутки.\n(максимум и минимум через пробел)')
-            bot.register_next_step_handler(msg, price_range)
+        msg = bot.send_message(
+            user.id, 'Сколько отелей показать?\n   (не более 10 штук)')
+        bot.register_next_step_handler(msg, photo)
+
     except Exception as e:
         print(f"bot happened in def hotels_count: {e}")
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
@@ -345,7 +349,7 @@ def distance_range(message):
         диапазон отдаленности от центра города
         и спрашивает количество отелей."""
     try:
-        if not re.fullmatch(r'\d+[.,]?\d+', message.text):
+        if not re.fullmatch(r'\d*[.,]?\d*', message.text):
             msg = bot.send_message(message.chat.id,
                                    'Ошибка ввода.\n'
                                    'Расстояние должно числом.\n'
@@ -354,36 +358,10 @@ def distance_range(message):
             return
         user = User.get_user(message.from_user.id)
         user.search_data[-1]['range_distance'] = message.text
-        msg = bot.send_message(
-            message.chat.id, 'Сколько отелей показать?\n   (не более 10 штук)')
-        bot.register_next_step_handler(msg, hotels_count)
+        hotels_count(message)
     except Exception as e:
         print(f"bot happened: {e}")
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
-
-
-def search_any(id):
-    """В зависимости от первого аргумента в search_data
-    буду вызывать тот или иной поиск"""
-    try:
-        user = User.get_user(id)
-        if (user.search_data[-1]['function'] == 'lowprice') or (user.search_data[-1]['function'] == 'highprice'):
-            price_sorter(user)
-            for hotels in user.answer:
-                bot.send_message(id, 'Отель {hotel}\n'
-                                     'Адрес: {address}\n'
-                                     'До центра города {distance} км.\n'
-                                     'Цена за сутки: {price}\n'
-                                     'Бронь на выбранные даты: {total_price} {cur}.'.format(
-                    hotel=hotels["name"], address=hotels["address"],
-                    distance=hotels["distance"], price=hotels["price"],
-                    total_price=hotels["total_price"], cur=user.search_data[-1]['currency']
-                ))
-                for ph_url in hotels["photo_url"]:
-                    bot.send_photo(id, photo=ph_url.format(size='z'))
-    except Exception as e:
-        print(f"bot happened in def search_any: {e}")
-        bot.send_message(User.users[id].id, 'Произошла ошибка...')
 
 
 def calendar_build_checkin(message):
@@ -441,7 +419,7 @@ def cal_checkout(call):
     try:
         user = User.get_user(call.message.chat.id)
         result, key, step = MyTranslationCalendar(calendar_id=2, locale='ru',
-                                                  min_date=user.search_data[-1]['date check inn']
+                                                  min_date=user.search_data[-1]['date check inn'] + timedelta(1)
                                                   ).process(call.data)
         if not result and key:
             bot.edit_message_text(f"Выберите дату выезда:",
@@ -460,6 +438,46 @@ def cal_checkout(call):
     except Exception as e:
         print(f"bot happened in def cal_checkout: {e}")
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
+
+
+def search_any(id_msg):
+    """В зависимости от первого аргумента в search_data
+    буду вызывать тот или иной поиск"""
+    try:
+        user = User.get_user(id_msg)
+        if (user.search_data[-1]['function'] == 'lowprice') or (user.search_data[-1]['function'] == 'highprice'):
+            price_sorter(user)
+            bot_answer_about(user, id_msg)
+        elif user.search_data[-1]['function'] == 'bestdeal':
+            besdeal_req(user)
+            bot.send_message(id_msg, 'По данному запросу найдено {} вариантов.'.format(
+                len(user.answer)
+            ))
+            bot_answer_about(user, id_msg)
+        else:
+            bot.send_message(id_msg, 'Функция еще не написана, попробуйте позже.')
+    except Exception as e:
+        print(f"bot happened in def search_any: {e}")
+        bot.send_message(User.users[id_msg].id, 'Произошла ошибка...')
+
+
+def bot_answer_about(user, id_msg):
+    try:
+        for hotels in user.answer:
+            bot.send_message(id_msg, 'Отель {hotel}\n'
+                                     'Адрес: {address}\n'
+                                     'До центра города {distance} км.\n'
+                                     'Цена за сутки: {price}\n'
+                                     'Бронь на выбранные даты: {total_price} {cur}.'.format(
+                                        hotel=hotels["name"], address=hotels["address"],
+                                        distance=hotels["distance"], price=hotels["price"],
+                                        total_price=hotels["total_price"], cur=user.search_data[-1]['currency']
+                                        ))
+            for ph_url in hotels["photo_url"]:
+                bot.send_photo(id_msg, photo=ph_url.format(size='z'))
+    except Exception as e:
+        print(f"bot happened in def bot_answer_about: {e}")
+        bot.send_message(id_msg, 'Произошла ошибка...')
 
 
 if __name__ == '__main__':

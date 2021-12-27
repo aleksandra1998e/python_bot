@@ -1,8 +1,9 @@
 from my_bot.my_class import User, MyTranslationCalendar
-from my_bot.keyboards import yes_no_keyboard, start_keyboard, func_keyboard, currency_keyboard
+from my_bot.keyboards import yes_no_keyboard, start_keyboard, func_keyboard, currency_keyboard, time_keyboard
 from my_bot.check import check_city
 from my_bot.price_sorter import price_sorter
 from my_bot.bestdeal import besdeal_req
+from my_bot.SQL import sql, history_user
 
 import re
 import telebot
@@ -12,7 +13,7 @@ from dotenv import load_dotenv
 import logging
 import datetime
 from datetime import timedelta
-#import sqlite3
+
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(asctime)s: %(name)s - %(levelname)s - %(message)s')
 logger = telebot.logger
@@ -21,40 +22,39 @@ load_dotenv()
 TOKEN = os.environ.get('TOKEN')
 bot = telebot.TeleBot(TOKEN)
 
-# with sqlite3.connect('bd_bot.bd') as bd:
-#     cursor = bd.cursor()
-#     query = """ CREATE TABLE IF NOT EXISTS base_history(id INT, inquiry TEXT, information TEXT)"""
-#     cursor.execute(query)
-
 
 @bot.message_handler(regexp='Привет')
 @bot.message_handler(commands=['start', 'hello_world'])
-def start_message(message):
+def start_message(message) -> None:
     """Функция отвечающая на команды старт и привет мир
     И слово привет."""
     try:
         user = User.get_user(message.from_user.id)
         bot.send_message(user.id, 'Привет!', reply_markup=start_keyboard)
         bot.send_message(user.id, 'Ну что, начнем', reply_markup=func_keyboard)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(message.chat.id, 'Произошла ошибка...')
 
 
 @bot.message_handler(commands=['help'])
-def helper(message):
+def helper(message) -> None:
     """Функция отвечающая на команду помощь."""
-    bot.send_message(
-        message.chat.id, 'Что я умею:\n'
-                         'Показать отели с самой низкой ценой (команда /lowprice)\n'
-                         'Показать отели с самой высокой ценой (команда /highprice)\n'
-                         'Показать отели в указанном ценовом диапазоне рядом с центром (команда /bestdeal)\n'
-                         'Показать историю запросов (команда /history)\n\n'
-                         'Также ты можешь воспользоваться кнопками на клавиатуре в любое удобное время.')
+    try:
+        bot.send_message(
+            message.chat.id, 'Что я умею:\n'
+                             'Показать отели с самой низкой ценой (команда /lowprice)\n'
+                             'Показать отели с самой высокой ценой (команда /highprice)\n'
+                             'Показать отели в указанном ценовом диапазоне рядом с центром (команда /bestdeal)\n'
+                             'Показать историю запросов (команда /history)\n\n'
+                             'Также ты можешь воспользоваться кнопками на клавиатуре в любое удобное время.')
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
+        bot.send_message(message.chat.id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'lowprice')
-def lowprice_seacher_handler(call: types):
+def lowprice_seacher_handler(call: types) -> None:
     """Функция поиска самых дешевых отелей.
         через инлайн кнопку"""
     try:
@@ -65,13 +65,13 @@ def lowprice_seacher_handler(call: types):
                                     call.message.chat.id, call.message.message_id)
         bot.answer_callback_query(call.id)
         bot.register_next_step_handler(msg, city)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(call.message.chat.id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'highprice')
-def highprice_seacher_handler(call: types):
+def highprice_seacher_handler(call: types) -> None:
     """Функция поиска самых дорогих отелей.
         через инлайн кнопку"""
     try:
@@ -82,13 +82,13 @@ def highprice_seacher_handler(call: types):
                                     call.message.chat.id, call.message.message_id)
         bot.answer_callback_query(call.id)
         bot.register_next_step_handler(msg, city)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(call.message.chat.id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'bestdeal')
-def bestdeal_seacher_handler(call: types):
+def bestdeal_seacher_handler(call: types) -> None:
     """Функция поиска отелей в заданном ценовом
      диапазоне и расстоянии от центра.
         через инлайн кнопку"""
@@ -100,24 +100,25 @@ def bestdeal_seacher_handler(call: types):
                                     call.message.chat.id, call.message.message_id)
         bot.answer_callback_query(call.id)
         bot.register_next_step_handler(msg, city)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(call.message.chat.id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'history')
-def history_seacher_handler(call: types):
+def history_seacher_handler(call: types) -> None:
     """Функция вывода истории поиска
          через инлайн кнопку"""
     try:
-        pass
-    except Exception as e:
-        print(f"bot happened: {e}")
+        bot.send_message(call.message.chat.id, 'За какой период требуется история?',
+                         reply_markup=time_keyboard)
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(call.message.chat.id, 'Произошла ошибка...')
 
 
 @bot.message_handler(commands=['lowprice'])
-def lowprice_seacher_commands(message):
+def lowprice_seacher_commands(message) -> None:
     """Функция поиска самых дешевых отелей.
     Через команду"""
     try:
@@ -127,13 +128,13 @@ def lowprice_seacher_commands(message):
         msg = bot.send_message(
             message.chat.id, 'В каком городе будем искать?')
         bot.register_next_step_handler(msg, city)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(message.chat.id, 'Произошла ошибка...')
 
 
 @bot.message_handler(commands=['highprice'])
-def highprice_seacher_commands(message):
+def highprice_seacher_commands(message) -> None:
     """Функция поиска самых самых дорогих отелей.
                 Через команду"""
     try:
@@ -143,13 +144,13 @@ def highprice_seacher_commands(message):
         msg = bot.send_message(
             message.chat.id, 'В каком городе будем искать?')
         bot.register_next_step_handler(msg, city)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(message.chat.id, 'Произошла ошибка...')
 
 
 @bot.message_handler(commands=['bestdeal'])
-def bestdeal_seacher_commands(message):
+def bestdeal_seacher_commands(message) -> None:
     """Функция поиска отелей в заданном ценовом
         диапазоне и расстоянии от центра.
                 Через команду"""
@@ -160,23 +161,43 @@ def bestdeal_seacher_commands(message):
         msg = bot.send_message(
             message.chat.id, 'В каком городе будем искать?')
         bot.register_next_step_handler(msg, city)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(message.chat.id, 'Произошла ошибка...')
 
 
 @bot.message_handler(commands=['history'])
-def history_seacher_commands(message):
+def history_seacher_commands(message) -> None:
     """Функция вывода истории поиска.
             Через команду"""
     try:
-        pass
-    except Exception as e:
-        print(f"bot happened: {e}")
+        bot.send_message(message.chat.id, 'За какой период требуется история?',
+                         reply_markup=time_keyboard)
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(message.chat.id, 'Произошла ошибка...')
 
 
-def city(message):
+@bot.callback_query_handler(func=lambda call: call.data.startswith('s '))
+def history_with_time(call) -> None:
+    """Функция отправки истории запросов пользователю"""
+    try:
+        user = User.get_user(call.message.chat.id)
+        a = call.data.split()
+        history = history_user(user, int(a[1]))
+        for i in history:
+            h = i[2][2:-2].replace("'", "")
+            bot.send_message(call.message.chat.id, 'Дата: {date}\n'
+                                                   'Запрос: {func}\n'
+                                                   'Найденные отели: {hotel}'.format(
+                date=i[0][:19], func=i[1], hotel=h
+            ))
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
+        bot.send_message(call.message.chat.id, 'Произошла ошибка...')
+
+
+def city(message) -> None:
     """Функция уточняет город и проверяет его действительность"""
     try:
         user = User.get_user(message.from_user.id)
@@ -185,13 +206,13 @@ def city(message):
                                    'Не могу понять, что это за город. Попробуйте ввести еще раз.')
             bot.register_next_step_handler(msg, city)
             return
-    except Exception as e:
-        print(f"bot happened in def city: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=lambda call: call.data.isdigit())
-def city_id(call):
+def city_id(call) -> None:
     """Функция добавляет в список критериев поиска
        город и спрашивает количество отелей или
        ценовой диапазон поиска в зависимости от запроса."""
@@ -202,13 +223,13 @@ def city_id(call):
                               call.message.chat.id, call.message.message_id,)
         bot.send_message(call.message.chat.id, 'Выберите валюту:',
                          reply_markup=currency_keyboard)
-    except Exception as e:
-        print(f"bot happened in def city_id: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('currency'))
-def currency_choice(call):
+def currency_choice(call) -> None:
     """Функция добавляет в список критериев
                 поиска валюту."""
     try:
@@ -225,12 +246,12 @@ def currency_choice(call):
                 call.message.chat.id,
                 'Введите желаемую стоимость за сутки.\n(минимум и максимум через пробел)')
             bot.register_next_step_handler(msg, price_range)
-    except Exception as e:
-        print(f"bot happened in def currency_choice: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
 
 
-def hotels_count(message):
+def hotels_count(message) -> None:
     try:
         """Функция спрашивает количество отелей или
         ценовой диапазон поиска в зависимости от запроса."""
@@ -239,12 +260,12 @@ def hotels_count(message):
             user.id, 'Сколько отелей показать?\n   (не более 10 штук)')
         bot.register_next_step_handler(msg, photo)
 
-    except Exception as e:
-        print(f"bot happened in def hotels_count: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
-def photo(message):
+def photo(message) -> None:
     """Функция добавляет в список критериев поиска
         количество отелей и спрашивает о том,
                 нужны ли фотографии."""
@@ -263,25 +284,25 @@ def photo(message):
         user.search_data[-1]['hotels_count'] = message.text
         bot.send_message(
             message.chat.id, 'Желаете добавить фотографии отелей?', reply_markup=yes_no_keyboard)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'yes')
-def count_photo_yes(call):
+def count_photo_yes(call) -> None:
     """Функция спрашивает количество фото."""
     try:
         msg = bot.edit_message_text('Введите количество фотографий. (максимум 5)',
                                     call.message.chat.id, call.message.message_id)
         bot.register_next_step_handler(msg, send_photo)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(call.inline_message_id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'no')
-def count_photo_no(call):
+def count_photo_no(call) -> None:
     """Функция передает в качестве количества
     фотографии 0. И начинает поиск предложений"""
     try:
@@ -290,12 +311,12 @@ def count_photo_no(call):
         bot.edit_message_text('Какие даты смотрим?',
                               call.message.chat.id, call.message.message_id)
         calendar_build_checkin(call.message.chat.id)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(call.inline_message_id, 'Произошла ошибка...')
 
 
-def send_photo(message):
+def send_photo(message) -> None:
     """Функция добавляет в список критериев поиска
         количество фото. И начинает поиск предложений"""
     try:
@@ -314,12 +335,12 @@ def send_photo(message):
         bot.send_message(message.chat.id,
                          'Какие даты смотрим?')
         calendar_build_checkin(message.chat.id)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(message.chat.id, 'Произошла ошибка...')
 
 
-def price_range(message):
+def price_range(message) -> None:
     """Функция добавляет в список критериев поиска
             ценовой диапазон и спрашивает
         диапазон отдаленности от центра города."""
@@ -339,12 +360,12 @@ def price_range(message):
             message.chat.id, 'Введите максимальное расстояние до центра в километрах.\n'
                              '(Примеры: 2 3.6 12,2)')
         bot.register_next_step_handler(msg, distance_range)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
-def distance_range(message):
+def distance_range(message) -> None:
     """Функция добавляет в список критериев поиска
         диапазон отдаленности от центра города
         и спрашивает количество отелей."""
@@ -359,24 +380,24 @@ def distance_range(message):
         user = User.get_user(message.from_user.id)
         user.search_data[-1]['range_distance'] = message.text
         hotels_count(message)
-    except Exception as e:
-        print(f"bot happened: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
-def calendar_build_checkin(message):
+def calendar_build_checkin(message) -> None:
     """Построение календаря начиная с сегодняшней даты"""
     try:
         calendar, step = MyTranslationCalendar(calendar_id=1, locale='ru', min_date=datetime.date.today()).build()
         bot.send_message(message,
                          f"Выберите дату заезда:",
                          reply_markup=calendar)
-    except Exception as e:
-        print(f"bot happened in def calendar_build_checkin: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[message].id, 'Произошла ошибка...')
 
 
-def calendar_build_checkout(message):
+def calendar_build_checkout(message) -> None:
     """Построение календаря начиная с выбранной даты заезда"""
     try:
         user = User.get_user(message)
@@ -385,13 +406,13 @@ def calendar_build_checkout(message):
         bot.send_message(message,
                          f"Выберите дату выезда:",
                          reply_markup=calendar)
-    except Exception as e:
-        print(f"bot happened in def calendar_build_checkout: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[message].id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=MyTranslationCalendar.func(calendar_id=1))
-def cal_checkin(call):
+def cal_checkin(call) -> None:
     """Выбор даты заезда в отель"""
     try:
         result, key, step = MyTranslationCalendar(calendar_id=1, locale='ru', min_date=datetime.date.today()
@@ -408,13 +429,13 @@ def cal_checkin(call):
             user = User.get_user(call.message.chat.id)
             user.search_data[-1]['date check inn'] = result
             calendar_build_checkout(call.message.chat.id)
-    except Exception as e:
-        print(f"bot happened in def cal_checkin: {e}")
+    except:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=MyTranslationCalendar.func(calendar_id=2))
-def cal_checkout(call):
+def cal_checkout(call) -> None:
     """Выбор даты выезда из отеля"""
     try:
         user = User.get_user(call.message.chat.id)
@@ -435,18 +456,19 @@ def cal_checkout(call):
             bot.send_message(
                 call.message.chat.id, 'Приступаю к поиску!')
             search_any(call.message.chat.id)
-    except Exception as e:
-        print(f"bot happened in def cal_checkout: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
 
 
-def search_any(id_msg):
+def search_any(id_msg) -> None:
     """В зависимости от первого аргумента в search_data
     буду вызывать тот или иной поиск"""
     try:
         user = User.get_user(id_msg)
         if (user.search_data[-1]['function'] == 'lowprice') or (user.search_data[-1]['function'] == 'highprice'):
             price_sorter(user)
+            user.search_data[-1]['date'] = datetime.datetime.now()
             bot_answer_about(user, id_msg)
         elif user.search_data[-1]['function'] == 'bestdeal':
             besdeal_req(user)
@@ -456,12 +478,12 @@ def search_any(id_msg):
             bot_answer_about(user, id_msg)
         else:
             bot.send_message(id_msg, 'Функция еще не написана, попробуйте позже.')
-    except Exception as e:
-        print(f"bot happened in def search_any: {e}")
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[id_msg].id, 'Произошла ошибка...')
 
 
-def bot_answer_about(user, id_msg):
+def bot_answer_about(user, id_msg) -> None:
     try:
         for hotels in user.answer:
             bot.send_message(id_msg, 'Отель {hotel}\n'
@@ -475,8 +497,9 @@ def bot_answer_about(user, id_msg):
                                         ))
             for ph_url in hotels["photo_url"]:
                 bot.send_photo(id_msg, photo=ph_url.format(size='z'))
-    except Exception as e:
-        print(f"bot happened in def bot_answer_about: {e}")
+        sql(user)
+    except Exception:
+        logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(id_msg, 'Произошла ошибка...')
 
 

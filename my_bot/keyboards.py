@@ -23,3 +23,9 @@ btn1, btn2, btn3 = types.InlineKeyboardButton("Рубль", callback_data='curre
                         types.InlineKeyboardButton("Доллар", callback_data='currency USD'),\
                         types.InlineKeyboardButton("Евро", callback_data='currency EUR')
 currency_keyboard.add(btn1, btn2, btn3)
+
+time_keyboard = types.InlineKeyboardMarkup(row_width=1)
+btn1, btn2, btn3 = types.InlineKeyboardButton("День", callback_data='s 86400'), \
+                        types.InlineKeyboardButton("Неделя", callback_data='s 604800'),\
+                        types.InlineKeyboardButton("2 недели", callback_data='s 1209600')
+time_keyboard.add(btn1, btn2, btn3)

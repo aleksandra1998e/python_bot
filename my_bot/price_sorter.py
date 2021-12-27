@@ -1,14 +1,16 @@
 import requests
 import json
 import re
+import os
 
 
 def photo_url(user, count):
+    rapidapi_key = os.environ.get('rapidapi_key')
     url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
     querystring = {"id": user.answer[-1]["id"]}
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': "32bd3869d3msh91160b5664ed92bp166150jsn789ad6762ed7"
+        'x-rapidapi-key': rapidapi_key
     }
     photos = requests.request("GET", url, headers=headers, params=querystring)
     a_json = json.loads(photos.text)
@@ -53,6 +55,7 @@ def hot_search(user, hotel):
 
 
 def price_sorter(user):
+    rapidapi_key = os.environ.get('rapidapi_key')
     url = "https://hotels4.p.rapidapi.com/properties/list"
     if user.search_data[-1]['function'] == 'lowprice':
         parameter = "PRICE"
@@ -68,7 +71,7 @@ def price_sorter(user):
                    }
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': "32bd3869d3msh91160b5664ed92bp166150jsn789ad6762ed7"
+        'x-rapidapi-key': rapidapi_key
     }
     response = requests.request("GET", url, headers=headers, params=querystring)
     a_json = json.loads(response.text)

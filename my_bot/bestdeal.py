@@ -2,9 +2,11 @@ import re
 import json
 import requests
 from .price_sorter import hot_search, photo_url
+import os
 
 
 def besdeal_req(user):
+    rapidapi_key = os.environ.get('rapidapi_key')
     parameter = "DISTANCE_FROM_LANDMARK"
     price_range = user.search_data[-1]['range_price'].split()
     price_min = min(price_range)
@@ -15,7 +17,7 @@ def besdeal_req(user):
     url = "https://hotels4.p.rapidapi.com/properties/list"
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': "32bd3869d3msh91160b5664ed92bp166150jsn789ad6762ed7"
+        'x-rapidapi-key': rapidapi_key
     }
     querystring = {"destinationId": user.search_data[-1]['city_id'], "pageNumber": "1",
                    "pageSize": user.search_data[-1]['hotels_count'],

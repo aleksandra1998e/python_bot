@@ -2,6 +2,8 @@ import requests
 import json
 from telebot import types
 import re
+import os
+
 
 def new_city_keyboards(response):
     """Создает варианты написного в сообщении города
@@ -22,12 +24,13 @@ def new_city_keyboards(response):
 def check_city(city, bot, id):
     '''Проверяет cуществует ли предложенный город'''
 
+    rapidapi_key = os.environ.get('rapidapi_key')
     url = "https://hotels4.p.rapidapi.com/locations/v2/search"
     querystring_first = {"query": city, "locale": "ru_RU", "currency": "RUB"}
     querystring_second = {"query": city, "locale": "en_EN", "currency": "USD"}
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': "32bd3869d3msh91160b5664ed92bp166150jsn789ad6762ed7"
+        'x-rapidapi-key': rapidapi_key
     }
 
     response = requests.request("GET", url, headers=headers, params=querystring_first)

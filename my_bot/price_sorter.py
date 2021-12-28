@@ -15,7 +15,7 @@ def photo_url(user: User, count: int, bot) -> None:
             'x-rapidapi-host': "hotels4.p.rapidapi.com",
             'x-rapidapi-key': rapidapi_key
         }
-        photos = requests.request("GET", url, headers=headers, params=querystring, timeout=(3, 30))
+        photos = requests.get(url, headers=headers, params=querystring, timeout=3)
         a_json = json.loads(photos.text)
 
         i = 0
@@ -80,7 +80,7 @@ def price_sorter(user: User, bot) -> None:
             'x-rapidapi-host': "hotels4.p.rapidapi.com",
             'x-rapidapi-key': rapidapi_key
         }
-        response = requests.request("GET", url, headers=headers, params=querystring, timeout=(3, 30))
+        response = requests.request("GET",url, headers=headers, params=querystring, timeout=(10, 30))
         a_json = json.loads(response.text)
         hotel_list = a_json["data"]["body"]["searchResults"]["results"]
         user.answer.clear()

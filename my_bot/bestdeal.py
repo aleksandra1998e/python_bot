@@ -32,7 +32,7 @@ def besdeal_req(user: User, bot) -> bool:
                        "landmarkIds": str(mil)
                        }
 
-        response = requests.request("GET", url, headers=headers, params=querystring, timeout=(3, 30))
+        response = requests.request("GET", url, headers=headers, params=querystring, timeout=(10, 30))
         a_json = json.loads(response.text)
         hotel_list = a_json["data"]["body"]["searchResults"]["results"]
         user.answer.clear()

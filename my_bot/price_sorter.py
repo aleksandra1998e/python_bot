@@ -37,6 +37,7 @@ def hot_search(user, hotel):
     user.answer.append(dict())
     user.answer[-1]["id"] = hotel["id"]
     user.answer[-1]["name"] = hotel.get("name", 'не найдено')
+    user.answer[-1]["urls"] = 'https://www.hotels.com/ho' + str(hotel["id"])
     user.answer[-1]["address"] = hotel["address"].get("streetAddress", 'не найдено')
     distance = float(hotel["landmarks"][0]["distance"].split()[0]) * 1.609
     user.answer[-1]["distance"] = round(distance, 2)

@@ -1,7 +1,7 @@
 import re
 import json
 import requests
-from .price_sorter import hot_search, photo_url
+from .price_sorter import hot_search
 import os
 
 

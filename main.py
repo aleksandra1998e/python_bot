@@ -24,7 +24,7 @@ bot = telebot.TeleBot(TOKEN)
 
 
 @bot.message_handler(regexp='Стоп')
-def stop(message) -> None:
+def stop(message: types.Message) -> None:
     """Функция прерывающая операции"""
     try:
         user = User.get_user(message.from_user.id)
@@ -36,7 +36,7 @@ def stop(message) -> None:
 
 @bot.message_handler(regexp='Привет')
 @bot.message_handler(commands=['start', 'hello_world'])
-def start_message(message) -> None:
+def start_message(message: types.Message) -> None:
     """Функция отвечающая на команды старт и привет мир
     И слово привет."""
     try:
@@ -50,7 +50,7 @@ def start_message(message) -> None:
 
 
 @bot.message_handler(commands=['help'])
-def helper(message) -> None:
+def helper(message: types.Message) -> None:
     """Функция отвечающая на команду помощь."""
     try:
         bot.send_message(
@@ -67,7 +67,7 @@ def helper(message) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'lowprice')
-def lowprice_seacher_handler(call: types) -> None:
+def lowprice_seacher_handler(call: types.CallbackQuery) -> None:
     """Функция поиска самых дешевых отелей.
         через инлайн кнопку"""
     try:
@@ -84,7 +84,7 @@ def lowprice_seacher_handler(call: types) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'highprice')
-def highprice_seacher_handler(call: types) -> None:
+def highprice_seacher_handler(call: types.CallbackQuery) -> None:
     """Функция поиска самых дорогих отелей.
         через инлайн кнопку"""
     try:
@@ -101,7 +101,7 @@ def highprice_seacher_handler(call: types) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'bestdeal')
-def bestdeal_seacher_handler(call: types) -> None:
+def bestdeal_seacher_handler(call: types.CallbackQuery) -> None:
     """Функция поиска отелей в заданном ценовом
      диапазоне и расстоянии от центра.
         через инлайн кнопку"""
@@ -119,7 +119,7 @@ def bestdeal_seacher_handler(call: types) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'history')
-def history_seacher_handler(call: types) -> None:
+def history_seacher_handler(call: types.CallbackQuery) -> None:
     """Функция вывода истории поиска
          через инлайн кнопку"""
     try:
@@ -131,7 +131,7 @@ def history_seacher_handler(call: types) -> None:
 
 
 @bot.message_handler(commands=['lowprice'])
-def lowprice_seacher_commands(message) -> None:
+def lowprice_seacher_commands(message: types.Message) -> None:
     """Функция поиска самых дешевых отелей.
     Через команду"""
     try:
@@ -147,7 +147,7 @@ def lowprice_seacher_commands(message) -> None:
 
 
 @bot.message_handler(commands=['highprice'])
-def highprice_seacher_commands(message) -> None:
+def highprice_seacher_commands(message: types.Message) -> None:
     """Функция поиска самых самых дорогих отелей.
                 Через команду"""
     try:
@@ -163,7 +163,7 @@ def highprice_seacher_commands(message) -> None:
 
 
 @bot.message_handler(commands=['bestdeal'])
-def bestdeal_seacher_commands(message) -> None:
+def bestdeal_seacher_commands(message: types.Message) -> None:
     """Функция поиска отелей в заданном ценовом
         диапазоне и расстоянии от центра.
                 Через команду"""
@@ -180,7 +180,7 @@ def bestdeal_seacher_commands(message) -> None:
 
 
 @bot.message_handler(commands=['history'])
-def history_seacher_commands(message) -> None:
+def history_seacher_commands(message: types.Message) -> None:
     """Функция вывода истории поиска.
             Через команду"""
     try:
@@ -192,7 +192,7 @@ def history_seacher_commands(message) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('s '))
-def history_with_time(call) -> None:
+def history_with_time(call: types.CallbackQuery) -> None:
     """Функция отправки истории запросов пользователю"""
     try:
         user = User.get_user(call.message.chat.id)
@@ -213,7 +213,7 @@ def history_with_time(call) -> None:
         bot.send_message(call.message.chat.id, 'Произошла ошибка...')
 
 
-def city(message) -> None:
+def city(message: types.Message) -> None:
     """Функция уточняет город и проверяет его действительность"""
     try:
         user = User.get_user(message.from_user.id)
@@ -231,7 +231,7 @@ def city(message) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data.isdigit())
-def city_id(call) -> None:
+def city_id(call: types.CallbackQuery) -> None:
     """Функция добавляет в список критериев поиска
        город и спрашивает количество отелей или
        ценовой диапазон поиска в зависимости от запроса."""
@@ -248,7 +248,7 @@ def city_id(call) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('currency'))
-def currency_choice(call) -> None:
+def currency_choice(call: types.CallbackQuery) -> None:
     """Функция добавляет в список критериев
                 поиска валюту."""
     try:
@@ -270,7 +270,7 @@ def currency_choice(call) -> None:
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
 
 
-def hotels_count(message) -> None:
+def hotels_count(message: types.Message) -> None:
     try:
         """Функция спрашивает количество отелей или
         ценовой диапазон поиска в зависимости от запроса."""
@@ -286,7 +286,7 @@ def hotels_count(message) -> None:
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
-def photo(message) -> None:
+def photo(message: types.Message) -> None:
     """Функция добавляет в список критериев поиска
         количество отелей и спрашивает о том,
                 нужны ли фотографии."""
@@ -314,7 +314,7 @@ def photo(message) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'yes')
-def count_photo_yes(call) -> None:
+def count_photo_yes(call: types.CallbackQuery) -> None:
     """Функция спрашивает количество фото."""
     try:
         msg = bot.edit_message_text('Введите количество фотографий. (максимум 5)',
@@ -326,7 +326,7 @@ def count_photo_yes(call) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'no')
-def count_photo_no(call) -> None:
+def count_photo_no(call: types.CallbackQuery) -> None:
     """Функция передает в качестве количества
     фотографии 0. И начинает поиск предложений"""
     try:
@@ -340,7 +340,7 @@ def count_photo_no(call) -> None:
         bot.send_message(call.inline_message_id, 'Произошла ошибка...')
 
 
-def send_photo(message) -> None:
+def send_photo(message: types.Message) -> None:
     """Функция добавляет в список критериев поиска
         количество фото. И начинает поиск предложений"""
     try:
@@ -367,7 +367,7 @@ def send_photo(message) -> None:
         bot.send_message(message.chat.id, 'Произошла ошибка...')
 
 
-def price_range(message) -> None:
+def price_range(message: types.Message) -> None:
     """Функция добавляет в список критериев поиска
             ценовой диапазон и спрашивает
         диапазон отдаленности от центра города."""
@@ -393,7 +393,7 @@ def price_range(message) -> None:
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
-def distance_range(message) -> None:
+def distance_range(message: types.Message) -> None:
     """Функция добавляет в список критериев поиска
         диапазон отдаленности от центра города
         и спрашивает количество отелей."""
@@ -416,7 +416,7 @@ def distance_range(message) -> None:
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
-def calendar_build_checkin(message) -> None:
+def calendar_build_checkin(message: types.Message) -> None:
     """Построение календаря начиная с сегодняшней даты"""
     try:
         calendar, step = MyTranslationCalendar(calendar_id=1, locale='ru', min_date=datetime.date.today()).build()
@@ -428,7 +428,7 @@ def calendar_build_checkin(message) -> None:
         bot.send_message(User.users[message].id, 'Произошла ошибка...')
 
 
-def calendar_build_checkout(message) -> None:
+def calendar_build_checkout(message: types.Message) -> None:
     """Построение календаря начиная с выбранной даты заезда"""
     try:
         user = User.get_user(message)
@@ -443,7 +443,7 @@ def calendar_build_checkout(message) -> None:
 
 
 @bot.callback_query_handler(func=MyTranslationCalendar.func(calendar_id=1))
-def cal_checkin(call) -> None:
+def cal_checkin(call: types.CallbackQuery) -> None:
     """Выбор даты заезда в отель"""
     try:
         result, key, step = MyTranslationCalendar(calendar_id=1, locale='ru', min_date=datetime.date.today()
@@ -466,7 +466,7 @@ def cal_checkin(call) -> None:
 
 
 @bot.callback_query_handler(func=MyTranslationCalendar.func(calendar_id=2))
-def cal_checkout(call) -> None:
+def cal_checkout(call: types.CallbackQuery) -> None:
     """Выбор даты выезда из отеля"""
     try:
         user = User.get_user(call.message.chat.id)
@@ -492,22 +492,22 @@ def cal_checkout(call) -> None:
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
 
 
-def search_any(id_msg) -> None:
+def search_any(id_msg: int) -> None:
     """В зависимости от первого аргумента в search_data
     буду вызывать тот или иной поиск"""
     try:
         user = User.get_user(id_msg)
         if (user.search_data[-1]['function'] == 'lowprice') or (user.search_data[-1]['function'] == 'highprice'):
-            price_sorter(user)
+            price_sorter(user, bot)
             user.search_data[-1]['date'] = datetime.datetime.now()
             bot_answer_about(user, id_msg)
         elif user.search_data[-1]['function'] == 'bestdeal':
-            besdeal_req(user)
-            user.search_data[-1]['date'] = datetime.datetime.now()
-            bot.send_message(id_msg, 'По данному запросу найдено {} вариантов.'.format(
-                len(user.answer)
-            ))
-            bot_answer_about(user, id_msg)
+            if besdeal_req(user, bot):
+                user.search_data[-1]['date'] = datetime.datetime.now()
+                bot.send_message(id_msg, 'По данному запросу найдено {} вариантов.'.format(
+                    len(user.answer)
+                ))
+                bot_answer_about(user, id_msg)
         else:
             bot.send_message(id_msg, 'Функция еще не написана, попробуйте позже.')
     except Exception:
@@ -515,7 +515,7 @@ def search_any(id_msg) -> None:
         bot.send_message(User.users[id_msg].id, 'Произошла ошибка...')
 
 
-def bot_answer_about(user, id_msg) -> None:
+def bot_answer_about(user: User, id_msg: int) -> None:
     try:
         for hotels in user.answer:
             bot.send_message(id_msg, 'Отель {hotel}\n'

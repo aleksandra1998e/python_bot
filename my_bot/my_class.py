@@ -4,18 +4,18 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 class User:
     users = dict()
 
-    def __init__(self, id):
+    def __init__(self, id: int):
         self.id = id
         User.add_user(id, self)
         self.search_data = []
         self.answer = []
 
     @classmethod
-    def add_user(cls, id, user):
+    def add_user(cls, id: int, user):
         cls.users[id] = user
 
     @classmethod
-    def get_user(cls, id):
+    def get_user(cls, id: int):
         if id not in cls.users.keys():
             a = cls(id)
             return a

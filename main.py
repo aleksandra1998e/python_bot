@@ -1,19 +1,18 @@
-from my_bot.my_class import User, MyTranslationCalendar
-from my_bot.keyboards import yes_no_keyboard, start_keyboard, func_keyboard, currency_keyboard, time_keyboard
-from my_bot.check import check_city
-from my_bot.price_sorter import price_sorter
-from my_bot.bestdeal import besdeal_req
-from my_bot.history import sql, history_user
-
+import datetime
+from datetime import timedelta
+from dotenv import load_dotenv
+import logging
+import os
 import re
 import telebot
 from telebot import types
-import os
-from dotenv import load_dotenv
-import logging
-import datetime
-from datetime import timedelta
 
+from my_bot.bestdeal import besdeal_req
+from my_bot.check import check_city
+from my_bot.history import sql, history_user
+from my_bot.keyboards import yes_no_keyboard, start_keyboard, func_keyboard, currency_keyboard, time_keyboard
+from my_bot.my_class import User, MyTranslationCalendar
+from my_bot.price_sorter import price_sorter
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(asctime)s: %(name)s - %(levelname)s - %(message)s')
 logger = telebot.logger
@@ -206,8 +205,7 @@ def history_with_time(call: types.CallbackQuery) -> None:
                 bot.send_message(call.message.chat.id, 'Дата: {date}\n'
                                                        'Запрос: {func}\n'
                                                        'Найденные отели: {hotel}'.format(
-                    date=i[0][:19], func=i[1], hotel=h
-                ))
+                    date=i[0][:19], func=i[1], hotel=h))
     except Exception:
         logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(call.message.chat.id, 'Произошла ошибка...')
@@ -416,30 +414,30 @@ def distance_range(message: types.Message) -> None:
         bot.send_message(User.users[message.chat.id].id, 'Произошла ошибка...')
 
 
-def calendar_build_checkin(message: types.Message) -> None:
+def calendar_build_checkin(message_id: int) -> None:
     """Построение календаря начиная с сегодняшней даты"""
     try:
         calendar, step = MyTranslationCalendar(calendar_id=1, locale='ru', min_date=datetime.date.today()).build()
-        bot.send_message(message,
+        bot.send_message(message_id,
                          f"Выберите дату заезда:",
                          reply_markup=calendar)
     except Exception:
         logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
-        bot.send_message(User.users[message].id, 'Произошла ошибка...')
+        bot.send_message(User.users[message_id].id, 'Произошла ошибка...')
 
 
-def calendar_build_checkout(message: types.Message) -> None:
+def calendar_build_checkout(message_id: int) -> None:
     """Построение календаря начиная с выбранной даты заезда"""
     try:
-        user = User.get_user(message)
+        user = User.get_user(message_id)
         calendar, step = MyTranslationCalendar(calendar_id=2, locale='ru',
                                                min_date=user.search_data[-1]['date check inn']).build()
-        bot.send_message(message,
+        bot.send_message(message_id,
                          f"Выберите дату выезда:",
                          reply_markup=calendar)
     except Exception:
         logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
-        bot.send_message(User.users[message].id, 'Произошла ошибка...')
+        bot.send_message(User.users[message_id].id, 'Произошла ошибка...')
 
 
 @bot.callback_query_handler(func=MyTranslationCalendar.func(calendar_id=1))
@@ -460,7 +458,7 @@ def cal_checkin(call: types.CallbackQuery) -> None:
             user = User.get_user(call.message.chat.id)
             user.search_data[-1]['date check inn'] = result
             calendar_build_checkout(call.message.chat.id)
-    except:
+    except Exception:
         logging.exception("%(asctime)s - %(levelname)s -%(funcName)s: %(lineno)d -%(message)s")
         bot.send_message(User.users[call.message.chat.id].id, 'Произошла ошибка...')
 
@@ -498,16 +496,16 @@ def search_any(id_msg: int) -> None:
     try:
         user = User.get_user(id_msg)
         if (user.search_data[-1]['function'] == 'lowprice') or (user.search_data[-1]['function'] == 'highprice'):
-            price_sorter(user, bot)
+            price_sorter(user)
             user.search_data[-1]['date'] = datetime.datetime.now()
             bot_answer_about(user, id_msg)
         elif user.search_data[-1]['function'] == 'bestdeal':
-            if besdeal_req(user, bot):
-                user.search_data[-1]['date'] = datetime.datetime.now()
-                bot.send_message(id_msg, 'По данному запросу найдено {} вариантов.'.format(
-                    len(user.answer)
-                ))
-                bot_answer_about(user, id_msg)
+            besdeal_req(user)
+            user.search_data[-1]['date'] = datetime.datetime.now()
+            bot.send_message(id_msg, 'По данному запросу найдено {} вариантов.'.format(
+                len(user.answer)
+            ))
+            bot_answer_about(user, id_msg)
         else:
             bot.send_message(id_msg, 'Функция еще не написана, попробуйте позже.')
     except Exception:

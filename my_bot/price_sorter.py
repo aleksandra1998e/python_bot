@@ -1,44 +1,42 @@
-import requests
 import json
-import re
 import os
+import re
+import requests
 from .my_class import User
-from requests.exceptions import Timeout
 
 
-def photo_url(user: User, count: int, bot) -> None:
-    try:
-        rapidapi_key = os.environ.get('rapidapi_key')
-        url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
-        querystring = {"id": user.answer[-1]["id"]}
-        headers = {
-            'x-rapidapi-host': "hotels4.p.rapidapi.com",
-            'x-rapidapi-key': rapidapi_key
-        }
-        photos = requests.get(url, headers=headers, params=querystring, timeout=3)
-        a_json = json.loads(photos.text)
+def photo_url(user: User, count: int) -> None:
+    """Функция добавления фото по найденным отелям"""
+    rapidapi_key = os.environ.get('rapidapi_key')
+    url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
+    querystring = {"id": user.answer[-1]["id"]}
+    headers = {
+        'x-rapidapi-host': "hotels4.p.rapidapi.com",
+        'x-rapidapi-key': rapidapi_key
+    }
+    photos = requests.get(url, headers=headers, params=querystring, timeout=3)
+    a_json = json.loads(photos.text)
 
-        i = 0
-        while i < count:
-            for j in a_json["roomImages"]:
-                for ph in j["images"]:
-                    if i < count:
-                        user.answer[-1]["photo_url"].append(ph["baseUrl"])
-                        i += 1
-            else:
-                break
-        while i < count:
-            for j in a_json["hotelImages"]:
+    i = 0
+    while i < count:
+        for j in a_json["roomImages"]:
+            for ph in j["images"]:
                 if i < count:
-                    user.answer[-1]["photo_url"].append(j["baseUrl"])
+                    user.answer[-1]["photo_url"].append(ph["baseUrl"])
                     i += 1
-            else:
-                break
-    except Timeout:
-        bot.send_message(id, "Превышено время ожидания.")
+        else:
+            break
+    while i < count:
+        for j in a_json["hotelImages"]:
+            if i < count:
+                user.answer[-1]["photo_url"].append(j["baseUrl"])
+                i += 1
+        else:
+            break
 
 
-def hot_search(user: User, hotel: dict[str], bot) -> None:
+def hot_search(user: User, hotel: dict[str]) -> None:
+    """Функция поиска информации об отелях"""
     user.answer.append(dict())
     user.answer[-1]["id"] = hotel["id"]
     user.answer[-1]["name"] = hotel.get("name", 'не найдено')
@@ -57,36 +55,35 @@ def hot_search(user: User, hotel: dict[str], bot) -> None:
     else:
         user.answer[-1]["total_price"] = (total_price_1.split())[1]
     user.answer[-1]["photo_url"] = list()
-    photo_url(user, int(user.search_data[-1]['photo_count']), bot)
+    photo_url(user, int(user.search_data[-1]['photo_count']))
 
 
-def price_sorter(user: User, bot) -> None:
-    try:
-        rapidapi_key = os.environ.get('rapidapi_key')
-        url = "https://hotels4.p.rapidapi.com/properties/list"
-        if user.search_data[-1]['function'] == 'lowprice':
-            parameter = "PRICE"
-        else:
-            parameter = "PRICE_HIGHEST_FIRST"
-        querystring = {"destinationId": user.search_data[-1]['city_id'], "pageNumber": "1",
-                       "pageSize": user.search_data[-1]['hotels_count'],
-                       "checkIn": user.search_data[-1]['date check inn'],
-                       "checkOut": user.search_data[-1]['date check out'],
+def price_sorter(user: User) -> None:
+    """Функция добавления списка отелей"""
+    rapidapi_key = os.environ.get('rapidapi_key')
+    url = "https://hotels4.p.rapidapi.com/properties/list"
+    if user.search_data[-1]['function'] == 'lowprice':
+        parameter = "PRICE"
+    else:
+        parameter = "PRICE_HIGHEST_FIRST"
+    querystring = {"destinationId": user.search_data[-1]['city_id'], "pageNumber": "1",
+                   "pageSize": user.search_data[-1]['hotels_count'],
+                   "checkIn": user.search_data[-1]['date check inn'],
+                   "checkOut": user.search_data[-1]['date check out'],
 
-                       "adults1": "1", "sortOrder": parameter,
-                       "currency": user.search_data[-1]['currency'],
-                       }
-        headers = {
-            'x-rapidapi-host': "hotels4.p.rapidapi.com",
-            'x-rapidapi-key': rapidapi_key
-        }
-        response = requests.request("GET",url, headers=headers, params=querystring, timeout=(10, 30))
-        a_json = json.loads(response.text)
-        hotel_list = a_json["data"]["body"]["searchResults"]["results"]
-        user.answer.clear()
+                   "adults1": "1", "sortOrder": parameter,
+                   "currency": user.search_data[-1]['currency'],
+                   }
+    headers = {
+        'x-rapidapi-host': "hotels4.p.rapidapi.com",
+        'x-rapidapi-key': rapidapi_key
+    }
+    response = requests.request("GET",url, headers=headers, params=querystring, timeout=(10, 30))
+    a_json = json.loads(response.text)
+    hotel_list = a_json["data"]["body"]["searchResults"]["results"]
+    user.answer.clear()
 
-        for hotel in hotel_list:
-            hot_search(user, hotel, bot)
-    except Timeout:
-        bot.send_message(id, "Превышено время ожидания.")
+    for hotel in hotel_list:
+        hot_search(user, hotel)
+
 
